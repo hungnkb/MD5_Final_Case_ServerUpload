@@ -6,17 +6,17 @@ dotenv.config();
 
 const router = express.Router();
 
-const CLIENT_URL = "http://localhost:3000/upload";
+const CLIENT_URL = "http://localhost:3000";
+
+let { rToken, aToken, dataUser } = '';
 
 router.get("/login/success", (req, res) => {
-    if (req.user) {
-        res.status(200).json({
-            success: true,
-            message: "successfull",
-            user: req.user,
-            //   cookies: req.cookies
+    if (rToken && aToken && dataUser) {
+        res.status(200).json({ 
+            rToken, aToken, dataUser
         });
     }
+       
 });
 
 router.get("/login/failed", (req, res) => {
@@ -31,10 +31,10 @@ router.get("/logout", (req, res) => {
     res.redirect(CLIENT_URL);
 });
 
-router.get("/google", passport.authenticate("google", { scope: ["profile", 'https://www.googleapis.com/auth/youtube.upload'] }));
+router.get("/google", passport.authenticate("google", { scope: ["profile", 'https://www.googleapis.com/auth/youtube.upload', "https://www.googleapis.com/auth/youtube.force-ssl", "https://www.googleapis.com/auth/youtube"], accessType: 'offline' }));
 
 router.get(
-    "/google/callback", 
+    "/google/callback",
     passport.authenticate("google", {
         successRedirect: CLIENT_URL,
         failureRedirect: "/login/failed",
@@ -46,8 +46,8 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
     callbackURL: '/auth/google/callback '
 }, function (accessToken, refreshToken, profile, done) {
-    done(null, profile);
-    console.log(accessToken, profile);
+    rToken = refreshToken; aToken = accessToken; dataUser = profile;
+    done(null, profile, accessToken, refreshToken);
 }))
 
 export default router;

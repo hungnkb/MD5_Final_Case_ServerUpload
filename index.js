@@ -8,10 +8,11 @@ import GoogleStrategy from 'passport-google-oauth20'
 import cookieSession from 'cookie-session';
 dotenv.config();
 import authRoute from './auth.js'
-import google from 'googleapis'
-import youtube from 'youtube-api';
+import { google } from 'googleapis'
 import open from 'open';
 import axios from 'axios';
+import fs from 'fs';
+import { log } from 'console';
 
 const app = express();
 const port = process.env.PORT || 9091;
@@ -44,25 +45,103 @@ app.post('/upload', upload.single('file'), async (req, res, next) => {
             error.httpStatusCode = 400
             return next(error)
         }
-        console.log(file);
-        let upload = await axios({
-            method: 'post',
-            url: 'https://youtube.googleapis.com/youtube/v3/videos?id=104286973343247449036&part=snippet,status&key=AIzaSyAzX4Zxax8MpYca5e7eDKChHYo83Ec2ApI',
-            headers:
-                { 'Content-Type': 'video/mp4', Accept: 'application/json', Authorization: 'Bearer ya29.a0Ael9sCPNiww1Hz9NXJqxypnpJH4GnEYvJDYewEuSiyTa2u072nAgri5aEZnEKcrDzvRg4c9oHVEeFF77OhqeqwHtlH-nSBlaqlWk4LCPegOG-S-Ji5NtvV-qTyjy65g-pSoKgnBtw_YfKBAgqNqRs2PMXrWwaCgYKAfoSARASFQF4udJhSNhtyZXow64-fKn7LIN6RA0163' },
-            snippet: {
-                title,
-                description,
-                tags,
-            },
-            status: {
-                privacyStatus: "private",
-            },
-            data: file
+        // let upload = await axios({
+        //     method: 'post',
+        //     url: 'https://youtube.googleapis.com/youtube/v3/videos?part=snippet&id=104286973343247449036&alt=json&key=AIzaSyAzX4Zxax8MpYca5e7eDKChHYo83Ec2ApI',
+        //     headers:
+        //         { 'Content-Type': 'video/mp4', Accept: 'video/mp4', Authorization: 'Bearer ya29.a0Ael9sCPoyQKQs-An3iDJy1yZnaCZ-Ri7Fd1Umb-9_Uf0AiFQrRrnApVzUdZ8Svwfo6rEQHoo3tti9419btn1OeyoW7JI2K6KywE4Hb5OzqEWJadj9kz2ra87mOLRDkAJI1IZAN5NUzC_L51ZNLsS3Ydrmk0eaCgYKAb4SARASFQF4udJhObQpYWX6WW5Gs9DLUkeyaQ0163' },
+        //     snippet: {
+        //         title,
+        //         description,
+        //         tags: [tags],
+        //         defaultLanguage: 'en',
+        //         categoryId: 22
 
+        //     },
+        //     status: {
+        //         privacyStatus: "public",
+        //         madeForKids: false,
+        //     },
+        //     fileDetails: {
+        //         fileName:  file.originalname,
+        //         fileType: 'video'
+        //     },
+        //     items: [{
+        //         media: {
+        //             body: file
+        //         }
+        //     }]
+        // })
+
+
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_OAUTH_CLIENT_ID,
+            process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+            process.env.GOOGLE_OAUTH_REDIRECT
+        )
+        oauth2Client.setCredentials({ refresh_token: '1//0exN1kk_LpvdqCgYIARAAGA4SNwF-L9Irb9cw9dKwKAWjVva1t6pT6yTspAm07yZY0Ugaqri81tcX0tQO6IZItUupW4vKDeu8VD4' })
+        const youtube = google.youtube({
+            version: 'v3',
+            auth: oauth2Client
         })
-        console.log(upload);
-        res.send(file)
+
+        const response = await youtube.videos.insert(
+            {
+                part: 'snippet, status',
+                requestBody: {
+                    snippet: {
+                        title,
+                        description,
+                        tags: [tags],
+                        defaultLanguage: 'en',
+                        categoryId: 22,
+                    },
+                    status: {
+                        privacyStatus: "public",
+                        madeForKids: false,
+                    },
+                },
+                media: {
+                    body: fs.createReadStream(req.file.path)
+                }
+            },
+            (err, data) => {
+                if (err) {
+                    console.log(err);
+                }
+                console.log('done ' + data);
+                res.send(data)
+            }
+        )
+        // youtube.insert(
+        //     {
+        //         resource: {
+        //             snippet: {
+        //                 title,
+        //                 description,
+        //                 tags: [tags],
+        //                 defaultLanguage: 'en',
+        //                 categoryId: 22
+
+        //             },
+        //             status: {
+        //                 privacyStatus: "public",
+        //                 madeForKids: false,
+        //             },
+        //         },
+        //         part: 'snippet,status',
+        //         media: {
+        //             body: fs.createReadStream(req.file.path)
+        //         }
+        //     },
+        //     (err, data) => {
+        //         if (err) throw err;
+        //         console.log("uploading video done");
+        //         fs.unlinkSync(req.file.path)
+        //         res.send('success')
+        //     }
+        // )
+        // res.send(file)
     } catch (e) {
         console.log(e);
     }
