@@ -12,11 +12,11 @@ let { rToken, aToken, dataUser } = '';
 
 router.get("/login/success", (req, res) => {
     if (rToken && aToken && dataUser) {
-        res.status(200).json({ 
+        res.status(200).json({
             rToken, aToken, dataUser
         });
     }
-       
+
 });
 
 router.get("/login/failed", (req, res) => {
@@ -27,6 +27,7 @@ router.get("/login/failed", (req, res) => {
 });
 
 router.get("/logout", (req, res) => {
+    rToken = null, aToken = null, dataUser = null;
     req.logout();
     res.redirect(CLIENT_URL);
 });
