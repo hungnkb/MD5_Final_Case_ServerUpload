@@ -39,7 +39,7 @@ app.get('/', (req, res) => {
 app.post('/upload', upload.single('file'), async (req, res, next) => {
     try {
         const file = req.file
-        const { title, description, tags } = req.body
+        const { title, description, tags, rToken } = req.body
         if (!file) {
             const error = new Error('Please upload a file')
             error.httpStatusCode = 400
@@ -79,7 +79,7 @@ app.post('/upload', upload.single('file'), async (req, res, next) => {
             process.env.GOOGLE_OAUTH_CLIENT_SECRET,
             process.env.GOOGLE_OAUTH_REDIRECT
         )
-        oauth2Client.setCredentials({ refresh_token: '1//0exN1kk_LpvdqCgYIARAAGA4SNwF-L9Irb9cw9dKwKAWjVva1t6pT6yTspAm07yZY0Ugaqri81tcX0tQO6IZItUupW4vKDeu8VD4' })
+        oauth2Client.setCredentials({ refresh_token: rToken })
         const youtube = google.youtube({
             version: 'v3',
             auth: oauth2Client
